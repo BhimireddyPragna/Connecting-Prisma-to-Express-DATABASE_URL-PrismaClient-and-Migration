@@ -1,19 +1,19 @@
 // ─────────────────────────────────────────────────────────────
 // Express entry point.
 //
-// Right now this server works, but its data lives in an in-memory array
+// Right now this server works, but its data lives on an in-memory array
 // (see routes/threads.js) and vanishes on every restart.
 //
 // YOUR TASK: connect Prisma + PostgreSQL. Follow the TODOs below.
 // You should NOT need to change routes/threads.js or anything in client/.
 // ─────────────────────────────────────────────────────────────
-import "dotenv/config"; // loads DATABASE_URL from .env before anything reads process.env
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import threadsRouter from "./routes/threads.js";
 
-// TODO 1: import the PrismaClient singleton you will create in prisma/client.js
-//   import prisma from "./prisma/client.js";
+// TODO 1: import the PrismaClient singleton
+import prisma from "./prisma/client.js";
 
 const app = express();
 app.use(cors());
@@ -23,14 +23,20 @@ app.use("/api/threads", threadsRouter);
 
 const PORT = 3001;
 
-// TODO 2: wrap startup in an async function that connects to the database first.
-//   - await prisma.$connect();
-//   - console.log a clear "Prisma connected" message
-//   - THEN app.listen(PORT, ...)
-//   A Prisma error here almost always means DATABASE_URL is wrong.
+// TODO 2: connect to database first, then start server
+async function startServer() {
+  try {
+    await prisma.$connect();
 
-// Replace this plain listen() with the connect-then-listen version above:
-app.listen(PORT, () => {
-  console.log(`✅ Threadbase API running on http://localhost:${PORT}`);
-  console.log("⚠️  Prisma is NOT connected yet — complete the TODOs to add it.");
-});
+    console.log("✅ Prisma connected");
+
+    app.listen(PORT, () => {
+      console.log(`✅ Threadbase API running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("❌ Prisma connection failed:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
